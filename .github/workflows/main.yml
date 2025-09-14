@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: MERN CI Pipeline
 
 on:
   push:
@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Setup Node.js
@@ -19,8 +19,24 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install dependencies
-        run: npm install
+      # 🔹 Backend (server)
+      - name: Install server dependencies
+        run: |
+          cd server
+          npm install
 
-      - name: Run tests
-        run: npm test
+      - name: Run server tests
+        run: |
+          cd server
+          npm test --if-present
+
+      # 🔹 Frontend (client)
+      - name: Install client dependencies
+        run: |
+          cd client
+          npm install
+
+      - name: Run client build
+        run: |
+          cd client
+          npm run build --if-present
