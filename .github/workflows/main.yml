@@ -1,4 +1,4 @@
-name: MERN CI Pipeline
+name: MERN CI/CD Pipeline
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: '18'
 
-      # 🔹 Backend (server)
+      # Backend (server)
       - name: Install server dependencies
         run: |
           cd server
@@ -30,13 +30,38 @@ jobs:
           cd server
           npm test --if-present
 
-      # 🔹 Frontend (client)
+      # Frontend (client)
       - name: Install client dependencies
         run: |
           cd client
           npm install
 
-      - name: Run client build
+      - name: Build client
         run: |
           cd client
-          npm run build --if-present
+          npm run build
+
+  deploy-client:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Build client for deployment
+        run: |
+          cd client
+          npm install
+          npm run build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./client/build
