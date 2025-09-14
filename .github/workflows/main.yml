@@ -1,16 +1,18 @@
-name: CI/CD - React Client to GitHub Pages
+name: CI/CD - MERN AI Text Summarizer
 
 on:
   push:
     branches:
-      - main   # or 'master' if your repo uses that
+      - main   # or 'master' if that's your default
+  pull_request:
   workflow_dispatch:
 
 permissions:
-  contents: write   # needed to push to gh-pages branch
+  contents: write   # required for deploy
 
 jobs:
-  build-deploy:
+  # ========== CI JOB ==========
+  ci:
     runs-on: ubuntu-latest
 
     steps:
@@ -18,23 +20,58 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2. Set up Node.js
+      # 2. Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      # 3. Install dependencies
-      - name: Install dependencies
+      # 3. Install server dependencies
+      - name: Install server dependencies
+        working-directory: ./server
+        run: npm install
+
+      # 4. Run server tests (if you have them)
+      - name: Run server tests
+        working-directory: ./server
+        run: npm test --if-present
+
+      # 5. Install client dependencies
+      - name: Install client dependencies
         working-directory: ./client
         run: npm install
 
-      # 4. Build React app
-      - name: Build project
+      # 6. Run client tests (if you have them)
+      - name: Run client tests
+        working-directory: ./client
+        run: npm test --if-present
+
+      # 7. Build client
+      - name: Build client
         working-directory: ./client
         run: npm run build
 
-      # 5. Deploy to GitHub Pages
+      # Upload build folder as artifact for CD job
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: client-build
+          path: ./client/build
+
+  # ========== CD JOB ==========
+  cd:
+    runs-on: ubuntu-latest
+    needs: ci   # only run if CI passes
+
+    steps:
+      # 1. Download build artifact from CI
+      - name: Download build artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: client-build
+          path: ./client/build
+
+      # 2. Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
