@@ -6,8 +6,8 @@
  * Defines API endpoints for text summarization
  */
 
-const express = require("express");
-const { summarizeText } = require("../controllers/summary.controller");
+import express from "express";
+import { summarizeText } from "../controllers/summary.controller";
 
 const router = express.Router();
 
@@ -18,4 +18,4 @@ const router = express.Router();
  */
 router.post("/", summarizeText);
 
-module.exports = router;
+export default router;

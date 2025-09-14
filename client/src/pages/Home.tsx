@@ -11,19 +11,37 @@ import TextArea from "../components/TextArea"
 import Summary from '../components/Summary'
 import Loader from '../components/Loader'
 import ErrorMessage from '../components/ErrorMessage'
+import SecurityDashboard from './SecurityDashboard'
+import { useAuth } from '../contexts/AuthContext'
+
+interface User {
+    id: string;
+    email: string;
+    isAdmin: boolean;
+}
+
+interface HomeProps {
+    onSignOut?: () => void;
+    user?: User;
+}
 
 /**
  * Home component - Main application interface
  * Handles text input, API calls, and displays results
+ * @param onSignOut - Callback function to sign out user
+ * @param user - Current user object
  * @returns JSX element containing the main application interface
  */
-const Home = () => {
+const Home = ({ onSignOut, user }: HomeProps) => {
+    const { token, isAdmin } = useAuth();
+
     // State for managing text input and API responses
     const [text, setText] = useState('')
     const [summary, setSummary] = useState('')
     const [loading, setLoading] = useState(false)
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
     const [showErrorMessage, setShowErrorMessage] = useState(false)
+    const [showSecurityDashboard, setShowSecurityDashboard] = useState(false)
 
     /**
      * Handle summarize button click
@@ -32,7 +50,7 @@ const Home = () => {
     const handleSummarize = () => {
         setSummary('')
         if (!text.trim()) {
-            setErrorMessage('pleaseEnterSomeTextToSummarize')
+            setErrorMessage('Please enter some text to summarize')
             setShowErrorMessage(true)
             return
         } else {
@@ -40,24 +58,42 @@ const Home = () => {
             setShowErrorMessage(false)
 
             // Call the backend API
+            const headers: HeadersInit = {
+                'Content-Type': 'application/json'
+            };
+
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
             fetch('http://localhost:5000/api/summary', {
                 method: 'POST',
                 body: JSON.stringify({ text }),
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                headers
             })
-                .then(res => res.json())
-                .then((data: { summary: string, error: 'pleaseEnterSomeTextToSummarize' | 'lessThan10Characters' }) => {
-                    setSummary(data.summary)
-                    setLoading(false)
-                    setErrorMessage('' as 'pleaseEnterSomeTextToSummarize' | 'lessThan10Characters' | null)
-                    setShowErrorMessage(false)
+                .then(res => {
+                    if (!res.ok) {
+                        return res.json().then(errorData => {
+                            throw new Error(errorData.error || 'Request failed');
+                        });
+                    }
+                    return res.json();
+                })
+                .then((data: { summary: string, error?: string }) => {
+                    if (data.error) {
+                        setErrorMessage(data.error);
+                        setShowErrorMessage(true);
+                    } else {
+                        setSummary(data.summary);
+                        setErrorMessage(null);
+                        setShowErrorMessage(false);
+                    }
+                    setLoading(false);
                 })
                 .catch(err => {
-                    setLoading(false)
-                    setErrorMessage(err.error as 'pleaseEnterSomeTextToSummarize' | 'lessThan10Characters' | null)
-                    setShowErrorMessage(true)
+                    setLoading(false);
+                    setErrorMessage(err.message || 'Failed to summarize text');
+                    setShowErrorMessage(true);
                 })
         }
     }
@@ -73,18 +109,34 @@ const Home = () => {
         setShowErrorMessage(false)
     }
 
+    if (showSecurityDashboard) {
+        return <SecurityDashboard onBack={() => setShowSecurityDashboard(false)} />;
+    }
+
     return (
         <div className="min-h-screen bg-gray-50 py-8 px-4">
             <div className="max-w-4xl mx-auto">
-                <h1 className="text-3xl font-bold text-light-gray-500 text-center mb-8">
-                    AI Text Summarizer
-                </h1>
+                <div className="flex justify-between items-center mb-8">
+                    <h1 className="text-3xl font-bold text-light-gray-500">
+                        AI Text Summarizer
+                    </h1>
+                    <div className="flex items-center space-x-4">
+                        {isAdmin && (
+                            <button
+                                onClick={() => setShowSecurityDashboard(true)}
+                                className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
+                            >
+                                Security Dashboard
+                            </button>
+                        )}
+                    </div>
+                </div>
 
                 <div className="bg-white rounded-lg shadow-md p-6 mb-6">
                     <TextArea
                         value={text}
                         onChange={setText}
-                        placeholder="Paste your text here... (minimum 10 characters)"
+                        placeholder="Paste your text here... (10-300 characters)"
                         rows={8}
                         className="mb-4"
                     />
@@ -106,10 +158,32 @@ const Home = () => {
                     </div>
 
                     {loading && <Loader />}
-                    {showErrorMessage && <ErrorMessage type={errorMessage || ''} />}
+                    {showErrorMessage && errorMessage && (
+                        <ErrorMessage
+                            message={errorMessage}
+                            onClose={() => {
+                                setShowErrorMessage(false);
+                                setErrorMessage(null);
+                            }}
+                        />
+                    )}
                 </div>
 
                 {summary && <Summary text={summary} />}
+
+                <div className="flex items-center justify-evenly space-x-2">
+                    <span className="text-sm text-gray-600">
+                        Welcome, {user?.email}
+                    </span>
+                    {onSignOut && (
+                        <button
+                            onClick={onSignOut}
+                            className="bg-green-500 text-white px-2 py-1 text-sm rounded hover:bg-green-800"
+                        >
+                            Sign Out
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     )
