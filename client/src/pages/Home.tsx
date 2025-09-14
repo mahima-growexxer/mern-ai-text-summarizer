@@ -106,7 +106,7 @@ const Home = () => {
                     </div>
 
                     {loading && <Loader />}
-                    {showErrorMessage && <ErrorMessage type={errorMessage} />}
+                    {showErrorMessage && <ErrorMessage type={errorMessage || ''} />}
                 </div>
 
                 {summary && <Summary text={summary} />}
