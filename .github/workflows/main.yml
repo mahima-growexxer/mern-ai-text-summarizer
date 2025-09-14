@@ -3,12 +3,12 @@ name: CI/CD - MERN AI Text Summarizer
 on:
   push:
     branches:
-      - main   # or 'master' if that's your default
+      - main   # or 'master' if that's your default branch
   pull_request:
   workflow_dispatch:
 
 permissions:
-  contents: write   # required for deploy
+  contents: write   # needed for deploy
 
 jobs:
   # ========== CI JOB ==========
@@ -46,16 +46,16 @@ jobs:
         working-directory: ./client
         run: npm run build
 
-      # Debug: confirm build exists
-      - name: List client build output
-        run: ls -la ./client/build
+      # Debug: confirm dist exists
+      - name: List client dist output
+        run: ls -la ./client/dist
 
-      - name: Upload client build artifact
+      - name: Upload client dist artifact
         uses: actions/upload-artifact@v4
         with:
-          name: client-build
-          path: ./client/build
-          if-no-files-found: error   # ensures failure if build missing
+          name: client-dist
+          path: ./client/dist
+          if-no-files-found: error
 
   # ========== CD JOB ==========
   cd:
@@ -63,14 +63,14 @@ jobs:
     needs: ci
 
     steps:
-      - name: Download client build artifact
+      - name: Download client dist artifact
         uses: actions/download-artifact@v4
         with:
-          name: client-build
-          path: ./client/build
+          name: client-dist
+          path: ./client/dist
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./client/build
+          publish_dir: ./client/dist
