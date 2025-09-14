@@ -41,27 +41,30 @@ jobs:
           cd client
           npm run build
 
-  deploy-client:
-    needs: build-and-test
-    runs-on: ubuntu-latest
+ deploy-client:
+  needs: build-and-test
+  runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+  permissions:
+    contents: write 
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: Build client for deployment
-        run: |
-          cd client
-          npm install
-          npm run build
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./client/build
+    - name: Install and Build client
+      run: |
+        cd client
+        npm install
+        npm run build
+
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./client/build
