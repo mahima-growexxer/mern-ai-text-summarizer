@@ -1,70 +1,42 @@
-name: MERN CI/CD Pipeline
+name: CI/CD - React Client to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches:
+      - main   # or 'master' if your repo uses that
+  workflow_dispatch:
+
+permissions:
+  contents: write   # needed to push to gh-pages branch
 
 jobs:
-  build-and-test:
+  build-deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # 2. Set up Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      # Backend (server)
-      - name: Install server dependencies
-        run: |
-          cd server
-          npm install
+      # 3. Install dependencies
+      - name: Install dependencies
+        working-directory: ./client
+        run: npm install
 
-      - name: Run server tests
-        run: |
-          cd server
-          npm test --if-present
+      # 4. Build React app
+      - name: Build project
+        working-directory: ./client
+        run: npm run build
 
-      # Frontend (client)
-      - name: Install client dependencies
-        run: |
-          cd client
-          npm install
-
-      - name: Build client
-        run: |
-          cd client
-          npm run build
-
- deploy-client:
-  needs: build-and-test
-  runs-on: ubuntu-latest
-
-  permissions:
-    contents: write 
-
-  steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-
-    - name: Install and Build client
-      run: |
-        cd client
-        npm install
-        npm run build
-
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./client/build
+      # 5. Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./client/build
