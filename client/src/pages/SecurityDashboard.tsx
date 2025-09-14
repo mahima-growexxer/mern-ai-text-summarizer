@@ -39,7 +39,7 @@ const SecurityDashboard = ({ onBack }: { onBack?: () => void }) => {
     const fetchSecurityLogs = async () => {
         try {
             setLoading(true);
-            const headers: HeadersInit = {};
+            const headers: Record<string, string> = {};
 
             if (token) {
                 headers['Authorization'] = `Bearer ${token}`;
@@ -55,7 +55,7 @@ const SecurityDashboard = ({ onBack }: { onBack?: () => void }) => {
             } else {
                 setError(data.error || 'Failed to fetch security logs');
             }
-        } catch (err) {
+        } catch {
             setError('Failed to connect to security service');
         } finally {
             setLoading(false);

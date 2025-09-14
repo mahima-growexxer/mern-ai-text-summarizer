@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * @author Mahima Gajiwala
  * @copyright 2025

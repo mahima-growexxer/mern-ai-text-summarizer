@@ -37,7 +37,7 @@ function AppContent() {
     );
   }
 
-  return <Home onSignOut={signOut} user={user} />;
+  return <Home onSignOut={signOut} user={user || undefined} />;
 }
 
 /**
